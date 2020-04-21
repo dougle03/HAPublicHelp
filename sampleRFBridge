@@ -1,0 +1,309 @@
+substitutions:
+  reboot_timeout_wifi: 900s
+  reboot_timeout_api: 1800s
+  output_power: 17dB
+  # Change these below
+  device_name: sonoff_rf1
+  ip_address: 10.10.1.54
+  friendly_name: "sonoff_RF_1"
+  temp_name: WW Led
+  humid_name: WW Led
+esphome:
+  name: ${device_name}
+  platform: ESP8266
+  board: esp01_1m
+wifi:
+  ssid: !secret wifi_home
+  password: !secret wifi_home_pw
+  manual_ip:
+    static_ip: ${ip_address}
+    gateway: 10.10.1.1
+    subnet: 255.255.0.0
+  fast_connect: on
+  reboot_timeout: ${reboot_timeout_wifi}
+  output_power: ${output_power}
+  ap: # Enable fallback hotspot (captive portal) in case wifi connection fails
+    ssid: ${device_name}
+    password: !secret wifi_esp_ap
+captive_portal:
+logger:
+api:
+  reboot_timeout: ${reboot_timeout_api}
+ota:
+  password: !secret esphome_ota_pw
+time:
+  - platform: sntp
+web_server:
+  port: 80
+sensor:
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi"
+    update_interval: 130s
+  - platform: uptime
+    name: Uptime Sensor
+binary_sensor: #RF stuff in here
+  - platform: status
+    name: "${friendly_name}Status"
+  - platform: remote_receiver #Motion1
+    name: rf_motion_01
+    device_class: motion
+    rc_switch_raw: 
+      code: '001001100000110101100110'
+      protocol: 1
+    filters:
+      delayed_off: 10s
+  - platform: remote_receiver #Motion2
+    name: rf_motion_02
+    device_class: motion
+    rc_switch_raw: 
+      code: '010011100011111001100110'
+      protocol: 1
+    filters:
+      delayed_off: 10s
+  - platform: remote_receiver #Motion3
+    name: rf_motion_03
+    device_class: motion
+    rc_switch_raw: 
+      code: '111011001111000101100110'
+      protocol: 1
+    filters:
+      delayed_off: 10s
+  - platform: remote_receiver #Motion4
+    name: rf_motion_04
+    device_class: motion
+    rc_switch_raw: 
+      code: '100101100100100101100110'
+      protocol: 1
+    filters:
+      delayed_off: 10s
+  - platform: remote_receiver #Motion5
+    name: rf_motion_05
+    device_class: motion
+    rc_switch_raw: 
+      code: '000001011010011001100110'
+      protocol: 1
+    filters:
+      delayed_off: 10s
+  - platform: remote_receiver #Door 1
+    id: door_window_open
+    internal: true
+    rc_switch_raw:
+      code: '010001101011010000001010'
+      protocol: 2
+    filters:
+      delayed_off: 100ms
+  - platform: remote_receiver #Door 1
+    id: door_window_closed
+    internal: true
+    rc_switch_raw:
+      code: '010001101011010000001110'
+      protocol: 2
+    filters:
+      delayed_off: 100ms
+  - platform: template #Door 1
+    name: door01
+    device_class: door
+    lambda: |-
+      if (id(door_window_open).state) {
+        // door window is open
+        return true;
+      } else if (id(door_window_closed).state) {
+        // door window closed
+        return false;
+      } else {
+        return {};
+      }
+  - platform: remote_receiver #Door 2
+    id: door_window_open_02
+    internal: true
+    rc_switch_raw:
+      code: '010011011000101000001010'
+      protocol: 2
+    filters:
+      delayed_off: 100ms
+  - platform: remote_receiver #Door 2
+    id: door_window_closed_02
+    internal: true
+    rc_switch_raw:
+      code: '010011011000101000001110'
+      protocol: 2
+    filters:
+      delayed_off: 100ms
+  - platform: template #Door 2
+    name: door02
+    device_class: door
+    lambda: |-
+      if (id(door_window_open_02).state) {
+        // door window is open
+        return true;
+      } else if (id(door_window_closed_02).state) {
+        // door window closed
+        return false;
+      } else {
+        return {};
+      }
+  - platform: remote_receiver #Door 3
+    id: door_window_open_03
+    internal: true
+    rc_switch_raw:
+      code: '010001011000001100001010'
+      protocol: 2
+    filters:
+      delayed_off: 100ms
+  - platform: remote_receiver #Door 3
+    id: door_window_closed_03
+    internal: true
+    rc_switch_raw:
+      code: '010001011000001100001110'
+      protocol: 2
+    filters:
+      delayed_off: 100ms
+  - platform: template #Door 3
+    name: door03
+    device_class: door
+    lambda: |-
+      if (id(door_window_open_03).state) {
+        // door window is open
+        return true;
+      } else if (id(door_window_closed_03).state) {
+        // door window closed
+        return false;
+      } else {
+        return {};
+      }
+  - platform: remote_receiver #Door 4
+    id: door_window_open_04
+    internal: true
+    rc_switch_raw:
+      code: '001111001111010000001010'
+      protocol: 2
+    filters:
+      delayed_off: 100ms
+  - platform: remote_receiver #Door 4
+    id: door_window_closed_04
+    internal: true
+    rc_switch_raw:
+      code: '001111001111010000001110'
+      protocol: 2
+    filters:
+      delayed_off: 100ms
+  - platform: template #Door 4
+    name: door03
+    device_class: door
+    lambda: |-
+      if (id(door_window_open_04).state) {
+        // door window is open
+        return true;
+      } else if (id(door_window_closed_04).state) {
+        // door window closed
+        return false;
+      } else {
+        return {};
+      }
+  - platform: remote_receiver #LWRF Panel 1 BOf
+    name: lwrf_button1_bigoff
+    device_class: moving
+    rc_switch_raw: 
+      code: '1110111011110101111010111101001011111111010101011110101110101111'
+      protocol: 8
+    filters:
+      delayed_off: 3s
+  - platform: remote_receiver #LWRF Panel 1 BOn
+    name: lwrf_button1_bigon
+    device_class: moving
+    rc_switch_raw: 
+      code: '1111101011110101111010111011001011111111010101011110101110101111'
+      protocol: 8
+    filters:
+      delayed_off: 3s
+  - platform: remote_receiver #LWRF Panel 1 LOf
+    name: lwrf_button1_littleoff
+    device_class: moving
+    rc_switch_raw: 
+      code: '1011110111110100101111111101001011111111010101011110101110101111'
+      protocol: 8
+    filters:
+      delayed_off: 3s
+  - platform: remote_receiver #LWRF Panel 1 -1
+    name: lwrf_button1_1
+    device_class: moving
+    rc_switch_raw: 
+      code: '1101110111101010101111111010101011111111010101011110101110101111'
+      protocol: 8
+    filters:
+      delayed_off: 3s
+  - platform: remote_receiver #LWRF Panel 1 -2
+    name: lwrf_button1_2
+    device_class: moving
+    rc_switch_raw: 
+      code: '1101110111100110101111111010101011111111010101011110101110101111'
+      protocol: 8
+    filters:
+      delayed_off: 3s
+  - platform: remote_receiver #LWRF Panel 1- 3
+    name: lwrf_button1_3
+    device_class: moving
+    rc_switch_raw: 
+      code: '1101110111011100101111111010101011111111010101011110101110101111'
+      protocol: 8
+    filters:
+      delayed_off: 3s
+  - platform: remote_receiver #SOS Button #1
+    name: sos_button#1
+    device_class: moving
+    rc_switch_raw: 
+      code: '111001101000001000011000'
+      protocol: 2
+    filters:
+      delayed_off: 1s
+  - platform: remote_receiver #SOS Button #2
+    name: sos_button#2
+    device_class: moving
+    rc_switch_raw: 
+      code: '110101110010000111111000'
+      protocol: 2
+    filters:
+      delayed_off: 1s
+  - platform: remote_receiver #SOS Button #3
+    name: sos_button#3
+    device_class: moving
+    rc_switch_raw: 
+      code: '000011011001111011011000'
+      protocol: 2
+    filters:
+      delayed_off: 1s
+  - platform: remote_receiver #SOS Button #4
+    name: sos_button#4
+    device_class: moving
+    rc_switch_raw:
+      code: '101111010001011000111000'
+      protocol: 2
+    filters:
+      delayed_off: 1s
+  - platform: remote_receiver #SOS Button #5
+    name: sos_button#5
+    device_class: moving
+    rc_switch_raw:
+      code: '010111001011110011101000'
+      protocol: 2
+    filters:
+      delayed_off: 1s
+switch:
+  - platform: restart
+    name: "${friendly_name} Restart"
+text_sensor:  
+  - platform: version
+    name: ${friendly_name} ESPhome Version
+remote_receiver: #RF Master
+  pin: 4
+  dump: rc_switch
+  tolerance: 50
+  filter: 4us
+  idle: 4ms
+remote_transmitter: #RF Master
+  pin: 5
+  carrier_duty_percent: 100%
+status_led:
+  pin:
+    number: GPIO13
+    inverted: false
