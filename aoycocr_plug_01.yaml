@@ -1,0 +1,129 @@
+substitutions:
+  reboot_timeout_wifi: 900s
+  reboot_timeout_api: 1800s
+  output_power: 17dB
+  # Change these below
+  device_name: aoycocr_plug_01
+  ip_address: 10.10.1.64
+  friendly_name: "aoycocr_plug_01"
+  current_res: "0.00221" # Higher value gives lower watt readout (Not yet Calibrated)
+  voltage_div: "910"     # Lower value gives lower voltage readout (Not yet Calibrated)
+esphome:
+  name: ${device_name}
+  platform: ESP8266
+  board: esp8285
+  on_boot:
+    priority: 100
+    then:
+      - switch.turn_on: switch1
+wifi:
+  ssid: !secret wifi_home
+  password: !secret wifi_home_pw
+  manual_ip:
+    static_ip: ${ip_address}
+    gateway: 10.10.1.1
+    subnet: 255.255.0.0
+  fast_connect: on
+  reboot_timeout: ${reboot_timeout_wifi}
+  output_power: ${output_power}
+  ap: # Enable fallback hotspot (captive portal) in case wifi connection fails
+    ssid: ${device_name}
+    password: !secret wifi_esp_ap
+captive_portal:
+logger:
+api:
+  reboot_timeout: ${reboot_timeout_api}
+ota:
+  password: !secret esphome_ota_pw
+time:
+  - platform: sntp
+web_server:
+  port: 80
+sensor:
+  - platform: hlw8012
+    sel_pin:
+      number: GPIO12
+      inverted: True
+    cf_pin: GPIO05
+    cf1_pin: GPIO14
+    current_resistor: ${current_res}
+    voltage_divider: ${voltage_div}
+    current:
+      name: "${device_name}_Amperage"
+      unit_of_measurement: A
+      accuracy_decimals: 3
+      icon: mdi:flash-circle
+    voltage:
+      name: "${device_name}_Voltage"
+      unit_of_measurement: V
+      icon: mdi:flash-circle
+    power:
+      name: "${device_name}_Wattage"
+      unit_of_measurement: W
+      id: "${device_name}_Wattage"
+      icon: mdi:flash-circle
+    change_mode_every: 4
+    update_interval: 10s
+  - platform: total_daily_energy
+    name: "${device_name}_Total Daily Energy"
+    power_id: "${device_name}_Wattage"
+    filters:
+        # Multiplication factor from W to kW is 0.001
+        - multiply: 0.001
+    unit_of_measurement: kWh
+    icon: mdi:clock-alert
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi"
+    update_interval: 130s
+  - platform: uptime
+    name: Uptime Sensor
+binary_sensor:
+  - platform: status
+    name: "${friendly_name} Status"
+  - platform: gpio
+    pin:
+      number: GPIO13
+      inverted: True
+    name: "${device_name}_button"
+    on_press:
+      - switch.toggle: switch1
+switch:
+  - platform: template
+    id: switch1
+    icon: mdi:power-socket-uk
+    optimistic: true
+    name: "${device_name}_Relay"
+    turn_on_action:
+      - output.turn_on: relay
+      - output.turn_on: led1
+    turn_off_action:
+      - output.turn_off: relay
+      - output.turn_off: led1
+  - platform: restart
+    name: "${friendly_name} Restart"
+text_sensor:  
+  - platform: version
+    name: ${friendly_name} ESPhome Version
+output:
+  - platform: gpio
+    pin: GPIO15
+    id: relay
+  - platform: gpio
+    pin: GPIO02
+    inverted: True
+    id: led1
+  # Register the green LED as a dimmable output ....
+  #- platform: esp8266_pwm
+   # id: "${device_name}led"
+   # pin:
+   #   number: GPIO12
+   #   inverted: false
+light:
+  # ... and then make a light out of it.
+  #- platform: monochromatic
+  #  name: "${device_name}led"
+  #  output: ${device_name}led
+status_led:
+  pin:
+   number: GPIO00
+   inverted: True
