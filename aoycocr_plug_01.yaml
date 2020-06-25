@@ -40,7 +40,7 @@ time:
 web_server:
   port: 80
 sensor:
-  - platform: hlw8012
+  - platform: hlw8012 #Energy Sensor
     sel_pin:
       number: GPIO12
       inverted: True
@@ -112,17 +112,6 @@ output:
     pin: GPIO02
     inverted: True
     id: led1
-  # Register the green LED as a dimmable output ....
-  #- platform: esp8266_pwm
-   # id: "${device_name}led"
-   # pin:
-   #   number: GPIO12
-   #   inverted: false
-light:
-  # ... and then make a light out of it.
-  #- platform: monochromatic
-  #  name: "${device_name}led"
-  #  output: ${device_name}led
 status_led:
   pin:
    number: GPIO00
